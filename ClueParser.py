@@ -19,14 +19,11 @@ class ClueParser:
     self.stopWords = set(self.readFile('../data/english.stop'))
 
   def extract_features(self, clue):
-    # Remove all stop words from the clue
-    clue_no_stops = ' '.join([w for w in clue.lower().split() if w not in self.stopWords])
+    # # Remove all stop words from the clue
+    # clue_no_stops = ' '.join([w for w in clue.lower().split() if w not in self.stopWords])
 
     # Extract into list
-    features = re.findall(r"[\w']+", clue_no_stops)
-
-    if 'husband' in clue_no_stops or 'wife' in clue_no_stops:
-      features.append('SPOUSE')
+    features = re.findall(r"[\w']+", clue)
 
     return features
 
@@ -36,13 +33,9 @@ class ClueParser:
     for clue in clues:
       features = self.extract_features(clue)
       klass = self.classifier.classify(features)
-      p(features, klass)
+      # p(features, klass)
       parses.append(klass + ':Gene Autry')
 
-    ##
-    # TODO: modify this to actually parse each clue and represent
-    # in relational form.
-    # parses.append("wife_of:Gene Autry")  # TODO: remove me
     return parses
 
   # Trains the model on clues paired with gold standard parses.
@@ -59,10 +52,6 @@ class ClueParser:
 
     for i, parsed_clue in enumerate(parsed_clues):
       labels[i] = parsed_clue.split(':')[0]
-
-
-    # for i in range(0, len(clues)):
-    #   p(features_list[i], labels[i])
 
     # print labels
     self.classifier.addExamples(features_list, labels);
