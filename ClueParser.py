@@ -42,24 +42,47 @@ class ClueParser:
     # is also used for parseClues, which is case sensitive.
     # Instead, .lowercase() features lists after extraction for
     # specific use cases (like classification).
-    features = re.findall(r"[\w'-]+", clue)
+    features = re.findall(r"[\w'&-]+", clue)
 
     return features
 
-  def person_name(self, features):
-    name = []
-    in_person_tag = False
+  def extract_entity(self, features, entity_tag):
+    entity_name = []
+    inside_entity_tag = False
+  
     for f in features:
-      if in_person_tag:   
-        if f == 'PERSON':
-          return (' ').join(name)
-        name.append(f)
-      elif f == 'PERSON':   in_person_tag = True
+      ##
+      # While we're inside of the entity tag, gather up the
+      # words within the entity
+      if inside_entity_tag:
+        # If we see the closing entity_tag, return name
+        if f == entity_tag:
+          return (' ').join(entity_name)
 
+        # Append the current feature to the entity_name
+        entity_name.append(f)
 
-      # if not in_person_tag and len(name) > 0:
-      #   print name
+      # If we see the opening entity_tag, set bool to True
+      elif f == entity_tag:   
+        inside_entity_tag = True
         
+  def extract_location(self, features):
+    location_indices = [i for i, f in enumerate(features) if f == 'LOCATION']
+    # If there are no locations marked...
+    # TODO: deal with this case, beacause we still need to find it!
+    if len(location_indices) == 0:    return ''
+    else:
+      # Extract first part of location
+      part1 = self.extract_entity(features, 'LOCATION')
+      ##
+      # If there are only 2 LOCATIONs (opening + closing tags),
+      # return what we've found because that's it.
+      if len(location_indices) == 2:  return part1
+      else:
+        # Find the second part of the location.
+        part2 = self.extract_entity(features[location_indices[1]+1:], 'LOCATION')
+        # Return the full location in the form: 'city, state'
+        return '%s, %s' % (part1, part2)
 
   # Parse each clue and return a list of parses, one for each clue."""
   def parseClues(self, clues):
@@ -70,45 +93,49 @@ class ClueParser:
       parse = ''
       
       if klass == 'headquarters_loc': # organization name (all words start with caps maybe?)
-        # parse = 'Information Habitat'
-        parse = ''
+        # TODO: deal with the case where ORGANZATION isn't surrounding the answer
+        # ex: 'Alive Well Aids Alternatives'
+        parse = self.extract_entity(features, 'ORGANIZATION')
 
       if klass == 'wife_of': # man's name (<PERSON></PERSON> + use gender classifier)
         # parse = 'George Fenneman'
-        parse = self.person_name(features)
+        parse = self.extract_entity(features, 'PERSON')
 
       if klass == 'univ_in': # 'town, city' in format 'w+, \w{2,}'
-        parse = ''
+        parse = self.extract_location(features)
 
       if klass == 'mayor_of': # 'town, city' in format 'w+, \w{2,}'
-        parse = ''
+        parse = self.extract_location(features)
+        # If this returns nothing, then do specific regex stuff
+          # ex: "This is the public university in Ada, OK"
 
       if klass == 'year_of_birth': # person's name (<PERSON></PERSON>)
-        parse = self.person_name(features)
+        parse = self.extract_entity(features, 'PERSON')
 
       if klass == 'parent_org_of': # Find organization name (all words start with caps maybe?)
-        # parse = 'Alive & Well AIDS Alternatives'
-        parse = ''
+        # TODO: deal with the case where ORGANZATION isn't surrounding the answer
+        parse = self.extract_entity(features, 'ORGANIZATION')
 
       if klass == 'husband_of': # woman's name (<PERSON></PERSON> + use gender classifier)
-        parse = self.person_name(features)
+        parse = self.extract_entity(features, 'PERSON')
 
       if klass == 'born_in': # person's name (<PERSON></PERSON>)
-        parse = self.person_name(features)
+        parse = self.extract_entity(features, 'PERSON')
 
       if klass == 'univ_president_of': # college/university (ends with 'College', 'Uni..', all caps)
-        # parse = 'Western State Colorado University'
-        parse = ''
+        # TODO: deal with the case where ORGANZATION isn't surrounding the answer
+        # TODO: make more precise with endings 'College', 'Univ'
+        parse = self.extract_entity(features, 'ORGANIZATION')
       
       if klass == 'college_of':  # person's name (<PERSON></PERSON>)
-        parse = self.person_name(features)
+        parse = self.extract_entity(features, 'PERSON')
       
       if klass == 'year_of_death': # person's name (<PERSON></PERSON>)
-        parse = self.person_name(features)
+        parse = self.extract_entity(features, 'PERSON')
       
       parses.append('%s:%s' % (klass, parse))
 
-      p(features, parses[-1])
+      if parse==None: p(features, parses[-1])
 
     # print parses
     return parses
