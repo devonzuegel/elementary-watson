@@ -17,19 +17,19 @@ class ClueParser:
     # Declares a trained classifier.
     self.classifier = NaiveBayes()
     self.stopWords = set(self.readFile('../data/english.stop'))
-    self.types = [
-      'headquarters_loc', 
-      'wife_of', 
-      'univ_in', 
-      'mayor_of', 
-      'year_of_birth', 
-      'parent_org_of', 
-      'husband_of', 
-      'born_in', 
-      'univ_president_of', 
-      'college_of', 
-      'year_of_death'
-    ]
+    self.types = {
+      'headquarters_loc': 'ORGANIZATION',
+      'wife_of': 'PERSON',
+      'univ_in': 'LOCATION',
+      'mayor_of': 'LOCATION',
+      'year_of_birth': 'PERSON',
+      'parent_org_of': 'ORGANIZATION',
+      'husband_of': 'PERSON',
+      'born_in': 'PERSON',
+      'univ_president_of': 'ORGANIZATION',
+      'college_of': 'PERSON',
+      'year_of_death': 'PERSON'
+    }
 
   def extract_features(self, clue):
     # # Remove all stop words from the clue
@@ -90,48 +90,11 @@ class ClueParser:
     for clue in clues:
       features = self.extract_features(clue)
       klass = self.classifier.classify([w.lower() for w in features])
+      
       parse = ''
-      
-      if klass == 'headquarters_loc': # organization name (all words start with caps maybe?)
-        # TODO: deal with the case where ORGANZATION isn't surrounding the answer
-        # ex: 'Alive Well Aids Alternatives'
-        parse = self.extract_entity(features, 'ORGANIZATION')
-
-      if klass == 'wife_of': # man's name (<PERSON></PERSON> + use gender classifier)
-        # parse = 'George Fenneman'
-        parse = self.extract_entity(features, 'PERSON')
-
-      if klass == 'univ_in': # 'town, city' in format 'w+, \w{2,}'
-        parse = self.extract_location(features)
-
-      if klass == 'mayor_of': # 'town, city' in format 'w+, \w{2,}'
-        parse = self.extract_location(features)
-        # If this returns nothing, then do specific regex stuff
-          # ex: "This is the public university in Ada, OK"
-
-      if klass == 'year_of_birth': # person's name (<PERSON></PERSON>)
-        parse = self.extract_entity(features, 'PERSON')
-
-      if klass == 'parent_org_of': # Find organization name (all words start with caps maybe?)
-        # TODO: deal with the case where ORGANZATION isn't surrounding the answer
-        parse = self.extract_entity(features, 'ORGANIZATION')
-
-      if klass == 'husband_of': # woman's name (<PERSON></PERSON> + use gender classifier)
-        parse = self.extract_entity(features, 'PERSON')
-
-      if klass == 'born_in': # person's name (<PERSON></PERSON>)
-        parse = self.extract_entity(features, 'PERSON')
-
-      if klass == 'univ_president_of': # college/university (ends with 'College', 'Uni..', all caps)
-        # TODO: deal with the case where ORGANZATION isn't surrounding the answer
-        # TODO: make more precise with endings 'College', 'Univ'
-        parse = self.extract_entity(features, 'ORGANIZATION')
-      
-      if klass == 'college_of':  # person's name (<PERSON></PERSON>)
-        parse = self.extract_entity(features, 'PERSON')
-      
-      if klass == 'year_of_death': # person's name (<PERSON></PERSON>)
-        parse = self.extract_entity(features, 'PERSON')
+      entity_type = self.types[klass]
+      if entity_type == 'LOCATION':   parse = self.extract_location(features)
+      else:                           parse = self.extract_entity(features, entity_type)
       
       parses.append('%s:%s' % (klass, parse))
 
