@@ -17,14 +17,33 @@ class ClueParser:
     # Declares a trained classifier.
     self.classifier = NaiveBayes()
     self.stopWords = set(self.readFile('../data/english.stop'))
+    self.types = [
+      'headquarters_loc', 
+      'wife_of', 
+      'univ_in', 
+      'mayor_of', 
+      'year_of_birth', 
+      'parent_org_of', 
+      'husband_of', 
+      'born_in', 
+      'univ_president_of', 
+      'college_of', 
+      'year_of_death'
+    ]
 
   def extract_features(self, clue):
     # # Remove all stop words from the clue
-    # # TODO: Work slightly better if we don't remove stopWords...?!?!
-    # clue_no_stops = ' '.join([w for w in clue.lower().split() if w not in self.stopWords])
-
+      # # TODO: Work slightly better if we don't remove stopWords...?!?!
+      # clue_no_stops = ' '.join([w for w in clue.lower().split() if w not in self.stopWords])
     # Extract into list
-    features = re.findall(r"[\w'-]+", clue.lower())
+
+    ##
+    # We don't want to lowercase our clues here b/c this method
+    # is also used for parseClues, which is case sensitive.
+    # Instead, .lowercase() features lists after extraction for
+    # specific use cases (like classification).
+    features = re.findall(r"[\w'-]+", clue)
+
     return features
 
   # Parse each clue and return a list of parses, one for each clue."""
@@ -32,10 +51,51 @@ class ClueParser:
     parses = []
     for clue in clues:
       features = self.extract_features(clue)
-      klass = self.classifier.classify(features)
+      klass = self.classifier.classify([w.lower() for w in features])
+      parse = ''
       # p(features, klass)
-      parses.append(klass + ':Gene Autry')
+      
+      if klass == 'headquarters_loc':
+        parse = 'Information Habitat'
 
+      if klass == 'wife_of':
+        # Find man's name (<PERSON></PERSON> + use gender classifier)
+        parse = 'George Fenneman'
+
+      if klass == 'univ_in': 
+        parse = ''
+
+      if klass == 'mayor_of': 
+        # Find town in format 'w+, \w{2,}'
+        parse = ''
+
+      if klass == 'year_of_birth': 
+        # Find person's name (<PERSON></PERSON>)
+        parse = ''
+
+      if klass == 'parent_org_of': 
+        parse = ''
+
+      if klass == 'husband_of': 
+        # Find woman's name (<PERSON></PERSON> + use gender classifier)
+        parse = ''
+
+      if klass == 'born_in': 
+        parse = ''
+
+      if klass == 'univ_president_of': 
+        parse = ''
+      
+      if klass == 'college_of': 
+        parse = ''
+      
+      if klass == 'year_of_death':
+        # Find person's name (<PERSON></PERSON>)
+        parse = ''
+      
+      parses.append('%s:%s' % (klass, parse))
+
+    # print parses
     return parses
 
   # Trains the model on clues paired with gold standard parses.
@@ -46,14 +106,15 @@ class ClueParser:
 
     # Iterate through each clue
     for i, clue in enumerate(clues):
+      # Extract case-sensitive features from clue
       features = self.extract_features(clue)
-      p(clue, features)
-      features_list[i] = features
+
+      # .lowercase() list of features before appending to features_list
+      features_list[i] = [w.lower() for w in features]
 
     for i, parsed_clue in enumerate(parsed_clues):
       labels[i] = parsed_clue.split(':')[0]
 
-    # print labels
     self.classifier.addExamples(features_list, labels);
 
 
