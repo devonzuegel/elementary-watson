@@ -32,10 +32,10 @@ class ClueParser:
 
     # Iterate through each clue
     for i, clue in enumerate(clues):
-      clue_no_stops = ' '.join([w for w in clue.split() if w not in self.stopWords])
+      clue = ' '.join([w for w in clue.split() if w not in self.stopWords])
       print clue
-      print clue_no_stops
-      features_list[i] = re.findall(r"[\w']+", clue_no_stops)
+      print clue
+      features_list[i] = re.findall(r"[\w']+", clue)
 
     self.classifier.addExamples(features_list, parsed_clues);
 
