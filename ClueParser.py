@@ -46,6 +46,21 @@ class ClueParser:
 
     return features
 
+  def person_name(self, features):
+    name = []
+    in_person_tag = False
+    for f in features:
+      if in_person_tag:   
+        if f == 'PERSON':
+          return (' ').join(name)
+        name.append(f)
+      elif f == 'PERSON':   in_person_tag = True
+
+
+      # if not in_person_tag and len(name) > 0:
+      #   print name
+        
+
   # Parse each clue and return a list of parses, one for each clue."""
   def parseClues(self, clues):
     parses = []
@@ -53,47 +68,47 @@ class ClueParser:
       features = self.extract_features(clue)
       klass = self.classifier.classify([w.lower() for w in features])
       parse = ''
-      # p(features, klass)
       
-      if klass == 'headquarters_loc':
-        parse = 'Information Habitat'
-
-      if klass == 'wife_of':
-        # Find man's name (<PERSON></PERSON> + use gender classifier)
-        parse = 'George Fenneman'
-
-      if klass == 'univ_in': 
+      if klass == 'headquarters_loc': # organization name (all words start with caps maybe?)
+        # parse = 'Information Habitat'
         parse = ''
 
-      if klass == 'mayor_of': 
-        # Find town in format 'w+, \w{2,}'
+      if klass == 'wife_of': # man's name (<PERSON></PERSON> + use gender classifier)
+        # parse = 'George Fenneman'
+        parse = self.person_name(features)
+
+      if klass == 'univ_in': # 'town, city' in format 'w+, \w{2,}'
         parse = ''
 
-      if klass == 'year_of_birth': 
-        # Find person's name (<PERSON></PERSON>)
+      if klass == 'mayor_of': # 'town, city' in format 'w+, \w{2,}'
         parse = ''
 
-      if klass == 'parent_org_of': 
+      if klass == 'year_of_birth': # person's name (<PERSON></PERSON>)
+        parse = self.person_name(features)
+
+      if klass == 'parent_org_of': # Find organization name (all words start with caps maybe?)
+        # parse = 'Alive & Well AIDS Alternatives'
         parse = ''
 
-      if klass == 'husband_of': 
-        # Find woman's name (<PERSON></PERSON> + use gender classifier)
-        parse = ''
+      if klass == 'husband_of': # woman's name (<PERSON></PERSON> + use gender classifier)
+        parse = self.person_name(features)
 
-      if klass == 'born_in': 
-        parse = ''
+      if klass == 'born_in': # person's name (<PERSON></PERSON>)
+        parse = self.person_name(features)
 
-      if klass == 'univ_president_of': 
-        parse = ''
-      
-      if klass == 'college_of': 
+      if klass == 'univ_president_of': # college/university (ends with 'College', 'Uni..', all caps)
+        # parse = 'Western State Colorado University'
         parse = ''
       
-      if klass == 'year_of_death':
-        # Find person's name (<PERSON></PERSON>)
-        parse = ''
+      if klass == 'college_of':  # person's name (<PERSON></PERSON>)
+        parse = self.person_name(features)
+      
+      if klass == 'year_of_death': # person's name (<PERSON></PERSON>)
+        parse = self.person_name(features)
       
       parses.append('%s:%s' % (klass, parse))
+
+      p(features, parses[-1])
 
     # print parses
     return parses
