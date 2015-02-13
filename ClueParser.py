@@ -20,11 +20,11 @@ class ClueParser:
 
   def extract_features(self, clue):
     # # Remove all stop words from the clue
+    # # TODO: Work slightly better if we don't remove stopWords...?!?!
     # clue_no_stops = ' '.join([w for w in clue.lower().split() if w not in self.stopWords])
 
     # Extract into list
-    features = re.findall(r"[\w']+", clue)
-
+    features = re.findall(r"[\w'-]+", clue.lower())
     return features
 
   # Parse each clue and return a list of parses, one for each clue."""
