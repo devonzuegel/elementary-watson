@@ -7,37 +7,65 @@ import itertools as it
 from NaiveBayes import NaiveBayes
 import re
 
+def p(s1, s2):
+  print s1
+  print s2
+  print '\n'
+
 class ClueParser:
   def __init__(self):
     # Declares a trained classifier.
     self.classifier = NaiveBayes()
     self.stopWords = set(self.readFile('../data/english.stop'))
 
+  def extract_features(self, clue):
+    # Remove all stop words from the clue
+    clue_no_stops = ' '.join([w for w in clue.lower().split() if w not in self.stopWords])
+
+    # Extract into list
+    features = re.findall(r"[\w']+", clue_no_stops)
+
+    if 'husband' in clue_no_stops or 'wife' in clue_no_stops:
+      features.append('SPOUSE')
+
+    return features
+
   # Parse each clue and return a list of parses, one for each clue."""
   def parseClues(self, clues):
     parses = []
-    # for clue in clues:
-    #   print clue
-    #   print self.classifier.classify(clue)
-    #   print '\n'
-      ##
-      # TODO: modify this to actually parse each clue and represent
-      # in relational form.
-      # parses.append("wife_of:Gene Autry")  # TODO: remove me
+    for clue in clues:
+      features = self.extract_features(clue)
+      klass = self.classifier.classify(features)
+      p(features, klass)
+      parses.append(klass + ':Gene Autry')
+
+    ##
+    # TODO: modify this to actually parse each clue and represent
+    # in relational form.
+    # parses.append("wife_of:Gene Autry")  # TODO: remove me
     return parses
 
   # Trains the model on clues paired with gold standard parses.
   def train(self, clues, parsed_clues):
+    # NOTE: len(clues) == len(parsed_clues)
     features_list = [0]*len(clues)
+    labels = [0]*len(parsed_clues)
 
     # Iterate through each clue
     for i, clue in enumerate(clues):
-      clue = ' '.join([w for w in clue.split() if w not in self.stopWords])
-      print clue
-      print clue
-      features_list[i] = re.findall(r"[\w']+", clue)
+      features = self.extract_features(clue)
+      p(clue, features)
+      features_list[i] = features
 
-    self.classifier.addExamples(features_list, parsed_clues);
+    for i, parsed_clue in enumerate(parsed_clues):
+      labels[i] = parsed_clue.split(':')[0]
+
+
+    # for i in range(0, len(clues)):
+    #   p(features_list[i], labels[i])
+
+    # print labels
+    self.classifier.addExamples(features_list, labels);
 
 
   #########################################################################
@@ -102,3 +130,4 @@ def main():
 
 if __name__ == '__main__':
   main()
+# 
