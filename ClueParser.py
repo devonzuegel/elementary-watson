@@ -16,7 +16,6 @@ class ClueParser:
   def __init__(self):
     # Declares a trained classifier.
     self.classifier = NaiveBayes()
-    self.stopWords = set(self.readFile('../data/english.stop'))
     self.types = {
       'headquarters_loc': 'ORGANIZATION',
       'wife_of': 'PERSON',
@@ -32,19 +31,12 @@ class ClueParser:
     }
 
   def extract_features(self, clue):
-    # # Remove all stop words from the clue
-      # # TODO: Work slightly better if we don't remove stopWords...?!?!
-      # clue_no_stops = ' '.join([w for w in clue.lower().split() if w not in self.stopWords])
-    # Extract into list
-
     ##
     # We don't want to lowercase our clues here b/c this method
     # is also used for parseClues, which is case sensitive.
     # Instead, .lowercase() features lists after extraction for
     # specific use cases (like classification).
-    features = re.findall(r"[\w'&-]+", clue)
-
-    return features
+    return re.findall(r"[\w'&-]+", clue)
 
   def extract_entity(self, features, entity_tag):
     entity_name = []
@@ -93,14 +85,13 @@ class ClueParser:
       
       parse = ''
       entity_type = self.types[klass]
-      if entity_type == 'LOCATION':   parse = self.extract_location(features)
-      else:                           parse = self.extract_entity(features, entity_type)
+      if entity_type == 'LOCATION':  parse = self.extract_location(features)
+      else:                          parse = self.extract_entity(features, entity_type)
       
       parses.append('%s:%s' % (klass, parse))
 
-      if parse==None: p(features, parses[-1])
+      # if parse==None: p(features, parses[-1])
 
-    # print parses
     return parses
 
   # Trains the model on clues paired with gold standard parses.
@@ -126,18 +117,6 @@ class ClueParser:
   #########################################################################
   #### You should not need to change anything after this point. ###########
   #########################################################################
-
-  ##
-  # Code for reading a file.  you probably don't want to modify anything
-  # here, unless you don't like the way we segment files.
-  def readFile(self, fileName):
-    contents = []
-    f = open(fileName)
-    for line in f:
-      contents.append(line)
-    f.close()
-    result = self.segmentWords('\n'.join(contents)) 
-    return result
 
   # Splits lines on whitespace for file reading  
   def segmentWords(self, s):
