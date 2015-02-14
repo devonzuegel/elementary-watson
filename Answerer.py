@@ -30,6 +30,10 @@ class Answerer:
     for parsed_clue in parsed_clues:
       # print '\n'+parsed_clue
       clue_type, clue_entity = parsed_clue.split(':')
+      
+      # def clue_regex_in_doc():
+      #   bool(re.search(regex, ))
+     
       relevant_docs = [d for d in all_docs if clue_entity in d]
       # pp.pprint(relevant_docs)
       if clue_type == 'year_of_birth':  # ex: 'What is 1957?'
@@ -52,16 +56,28 @@ class Answerer:
 
   # Answers questions of the type year_of_birth:[clue].
   def answerYOB(self, clue, relevant_docs):
+
+    pattern_positns = [0, 0, 0]
+    
+    # 'Katherine [\w ]{1,20} Schwarzenegger[\w<>/]{1,20} \(born \w{1,11} \d{1,2},? (\d{4})'
+    # name_clue = r''
+    # for name in clue.split():
+    #   name_clue += name + '[\w <>/]{1,20}'
+    # name_clue += '\([born] \w{1,11} \d{1,2},? (\d{4})'
+    # print name_clue
+
     patterns = [
+      # name_clue,
       r'\(born \d{1,2} (\b\w{1,11}\b) \d{4} \d{1,2} \b\w{1,11}\b \d{4}\)',
       r'\(\d{1,2} (\b\w{1,11}\b) \d{4} \d{1,2} \b\w{1,11}\b \d{4}\)',
       r'(\d{4})'
     ]
-    pattern_positns = [0, 0, 0]
     match = self.searchForPatterns(patterns, pattern_positns, relevant_docs)
-    if match == None:
+    
+    if match == None:   
       return 'No answer.'
-    else:
+    else:               
+      # print 'What is %s?' % (match)
       return 'What is %s?' % (match)
 
 
