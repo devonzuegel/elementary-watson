@@ -36,7 +36,9 @@ class Answerer:
       #   bool(re.search(regex, ))
      
       relevant_docs = [d for d in all_docs if clue_entity in d]
-      # TODO: DEALS WITH THIS CASE ("Ike Eisenhower" is in 0 docs)
+      if len(relevant_docs) == 0 and (clue_entity.split()) > 2:
+        for two_gram in re.findall("\w+ \w+", clue_entity):
+          relevant_docs += [d for d in all_docs if two_gram in d]                
       if len(relevant_docs) == 0:
         for word in clue_entity.split():
           relevant_docs += [d for d in all_docs if word in d]
@@ -49,10 +51,6 @@ class Answerer:
         answers.append(self.answerHusbandOf(clue_entity, relevant_docs))
       else:
         answers.append('No answer.')
-
-    print '\n'
-    for i, parsed_clue in enumerate(parsed_clues):
-      print '%d  :  %s  :  %s' % (i, parsed_clue, answers[i])
 
     return answers
   
@@ -109,6 +107,7 @@ class Answerer:
     
     patterns = [
       r'was born in <LOCATION>([\w ]+</LOCATION>, <LOCATION>[\w ]+)</LOCATION>',
+      r'\(<LOCATION>([\w ]+(?:</LOCATION>, <LOCATION>[\w ]+)?)</LOCATION>, (?:born )?\d{1,2} \b\w{1,11}\b (\d{4})'
     ]
     match = self.searchForPatterns(patterns, [1]*len(patterns), relevant_docs)
     match = str(match).replace('<LOCATION>', '').replace('</LOCATION>', '')
@@ -187,12 +186,16 @@ class Answerer:
     wrong = 0
     no_answers = 0
     score = 0
-    
+
+    col_width = max(len(line) for line in guessed_answers) + 1  # padding
+    print '---------------------------------------------'
     for guessed_answer, gold_answer_line in it.izip(guessed_answers, gold_answers):
-      example_wrong = True # guilty until proven innocent
+      example_wrong = True  # guilty until proven innocent
+      toprint = ''
       if guessed_answer == "No answer.":
         example_wrong = False
         no_answers += 1
+        toprint += '0  '
       else:
         golds = gold_answer_line.split("|")
         for gold in golds:
@@ -200,10 +203,14 @@ class Answerer:
             correct += 1
             score += 1
             example_wrong = False
+            toprint = '+  '
             break
       if example_wrong:
         wrong += 1
         score -= 0.5
+        toprint = '-  '
+      print toprint + guessed_answer.ljust(col_width) + gold_answer_line.ljust(col_width)
+    print '---------------------------------------------'
     print "Correct Answers: {0}".format(correct)
     print "No Answers: {0}".format(no_answers)
     print "Wrong Answers: {0}".format(wrong)
