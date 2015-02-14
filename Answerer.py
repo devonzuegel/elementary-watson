@@ -78,24 +78,19 @@ class Answerer:
     for name in clue.split():
       name_clue += name + '[\w\- ]*'
     name_clue += '</PERSON> \(born December 13, (1989)'
-    print name_clue
 
     patterns = [
       name_clue,
 
       # (born Month DD, YYYY DD Month YYYY)
-      r'\((?:born )?\b\w{1,11}\b \d{1,2}, (\d{4}) \b\w{1,11}\b \d{1,2}, (\d{4})\)',
+      r'\((?:born )?\b\w{1,11}\b \d{1,2}, (\d{4}) \b\w{1,11}\b \d{1,2}, (\d{4})',
       
-      # (born DD Month YYYY DD Month YYYY)
-      r'\((?:born )?\d{1,2} \b\w{1,11}\b (\d{4}) \d{1,2} \b\w{1,11}\b \d{4}\)',
+      # (born DD Month YYYY
+      r'\((?:born )?\d{1,2} \b\w{1,11}\b (\d{4})',
 
-      # # (born DD Month YYYY DD Month YYYY)
-      r'\((?:born )?\d{1,2} \b\w{1,11}\b (\d{4})\)',
+      # (born Month DD YYYY
+      r'\((?:born )?\b\w{1,11}\b \d{1,2} (\d{4})',
       
-      # (born DD Month YYYY DD Month YYYY)
-      # r'\((?:born )?\b[A-Z]\w{1,10}\b \d{1,2}, (\d{4})\)',
-      # (born October 26, 1962)
-
       # DDDD
       r'(\d{4})'
     ]
@@ -112,8 +107,10 @@ class Answerer:
     
     patterns = [
       r'was born in <LOCATION>([\w ]+</LOCATION>, <LOCATION>[\w ]+)</LOCATION>',
-      # r'Born as <PERSON>Edgar Poe</PERSON> in <LOCATION>Boston</LOCATION>, <LOCATION>Massachusetts</LOCATION>'
-      # r'<PERSON>Benjamin Franklin</PERSON> was born on Milk Street, in <LOCATION>(Boston</LOCATION>, <LOCATION>Massachusetts)</LOCATION>, on January 17, 1706',
+      r'was born <PERSON>[\w\- ]+</PERSON> in <LOCATION>([\w ]+(?:</LOCATION>, <LOCATION>[\w ]+)?)</LOCATION>,',
+      r"was born in the Doctor's <LOCATION>Hospital</LOCATION> in <LOCATION>([\w ]+(?:</LOCATION>, <LOCATION>[\w ]+)?)</LOCATION>",
+      r'Born as <PERSON>Edgar Poe</PERSON> in <LOCATION>([\w ]+(?:</LOCATION>, <LOCATION>[\w ]+)?)</LOCATION>',
+      r'<PERSON>Benjamin Franklin</PERSON> was born on Milk Street, in <LOCATION>(Boston</LOCATION>, <LOCATION>Massachusetts)</LOCATION>, on January 17, 1706',
       r'\(<LOCATION>([\w ]+(?:</LOCATION>, <LOCATION>[\w ]+)?)</LOCATION>, (?:born )?\d{1,2} \b\w{1,11}\b (\d{4})'
     ]
     match = self.searchForPatterns(patterns, [1]*len(patterns), relevant_docs)
