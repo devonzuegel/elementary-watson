@@ -10,6 +10,8 @@ import re
 import pprint
 
 pp = pprint.PrettyPrinter(indent=4)
+proper_noun = '((?:[A-Z]\w+ )*[A-Z]\w+)'
+person_name = '<PERSON>%s</PERSON>' % (proper_noun)
 
 class Answerer:
   # Answer each clue and return a list of answers.
@@ -28,51 +30,87 @@ class Answerer:
     #   # you are confident of. We recommend using Hearst style
     #   # patterns to find answers within the Wiki text.
     for parsed_clue in parsed_clues:
-      # print '\n'+parsed_clue
       clue_type, clue_entity = parsed_clue.split(':')
       
       # def clue_regex_in_doc():
       #   bool(re.search(regex, ))
      
       relevant_docs = [d for d in all_docs if clue_entity in d]
-      # pp.pprint(relevant_docs)
+      # TODO: DEALS WITH THIS CASE ("Ike Eisenhower" is in 0 docs)
+      if len(relevant_docs) == 0:
+        for word in clue_entity.split():
+          relevant_docs += [d for d in all_docs if word in d]
+      
       if clue_type == 'year_of_birth':  # ex: 'What is 1957?'
         answers.append(self.answerYOB(clue_entity, relevant_docs))
       elif clue_type == 'born_in':      # ex: 'What is Paris?'
-        # print 'No answer.'
-        answers.append('No answer.')
+        answers.append(self.answerBornIn(clue_entity, relevant_docs))
       elif clue_type == 'husband_of':   # ex: 'Who is Anne Hathaway?'
-        # print 'No answer.'
-        answers.append('No answer.')
+        answers.append(self.answerHusbandOf(clue_entity, relevant_docs))
       else:
         answers.append('No answer.')
+
+    print '\n'
+    for i, parsed_clue in enumerate(parsed_clues):
+      print '%d  :  %s  :  %s' % (i, parsed_clue, answers[i])
 
     return answers
   
   # Answers questions of the type husband_of:[clue].
   def answerHusbandOf(self, clue, relevant_docs):
-    return 'No answer.'
-    # return "Who is Gene Autry?"
+    patterns = [
+      r'%s.* wife %s' % (person_name, person_name),
+      r'^<PERSON>(.*)</PERSON></TITLE>',
+      r'<PERSON>(.*)</PERSON>'
+    ]
+
+    # Extract best match m from relevant docs.
+    m = self.searchForPatterns(patterns, [1]*len(patterns), relevant_docs)
+    if m == None:   return 'No answer.'
+    else:           return 'Who is %s?' % (m)
 
   # Answers questions of the type year_of_birth:[clue].
   def answerYOB(self, clue, relevant_docs):
-
-    pattern_positns = [0, 0, 0]
     
     # 'Katherine [\w ]{1,20} Schwarzenegger[\w<>/]{1,20} \(born \w{1,11} \d{1,2},? (\d{4})'
-    # name_clue = r''
-    # for name in clue.split():
-    #   name_clue += name + '[\w <>/]{1,20}'
-    # name_clue += '\([born] \w{1,11} \d{1,2},? (\d{4})'
-    # print name_clue
+      # name_clue = r''
+      # for name in clue.split():
+      #   name_clue += name + '[\w <>/]{1,20}'
+      # name_clue += '\([born] \w{1,11} \d{1,2},? (\d{4})'
+      # print name_clue
 
     patterns = [
-      # name_clue,
-      r'\(born \d{1,2} (\b\w{1,11}\b) \d{4} \d{1,2} \b\w{1,11}\b \d{4}\)',
-      r'\(\d{1,2} (\b\w{1,11}\b) \d{4} \d{1,2} \b\w{1,11}\b \d{4}\)',
+      # (born Month DD, YYYY DD Month YYYY)
+      r'\((?:born )?\b\w{1,11}\b \d{1,2}, (\d{4}) \b\w{1,11}\b \d{1,2}, (\d{4})\)',
+      
+      # (born DD Month YYYY DD Month YYYY)
+      r'\((?:born )?\d{1,2} \b\w{1,11}\b (\d{4}) \d{1,2} \b\w{1,11}\b \d{4}\)',
+
+      # # (born DD Month YYYY DD Month YYYY)
+      r'\((?:born )?\d{1,2} \b\w{1,11}\b (\d{4})\)',
+      
+      # (born DD Month YYYY DD Month YYYY)
+      # r'\((?:born )?\b[A-Z]\w{1,10}\b \d{1,2}, (\d{4})\)',
+      # (born October 26, 1962)
+
+      # DDDD
       r'(\d{4})'
     ]
-    match = self.searchForPatterns(patterns, pattern_positns, relevant_docs)
+    match = self.searchForPatterns(patterns, [1]*len(patterns), relevant_docs)
+    
+    if match == None:   
+      return 'No answer.'
+    else:               
+      # print 'What is %s?' % (match)
+      return 'What is %s?' % (match)
+
+  # Answers questions of the type year_of_birth:[clue].
+  def answerBornIn(self, clue, relevant_docs):
+    
+    patterns = [
+      r'was born in <LOCATION></LOCATION>',
+    ]
+    match = self.searchForPatterns(patterns, [1]*len(patterns), relevant_docs)
     
     if match == None:   
       return 'No answer.'
