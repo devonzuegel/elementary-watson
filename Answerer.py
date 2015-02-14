@@ -70,14 +70,19 @@ class Answerer:
   # Answers questions of the type year_of_birth:[clue].
   def answerYOB(self, clue, relevant_docs):
     
-    # 'Katherine [\w ]{1,20} Schwarzenegger[\w<>/]{1,20} \(born \w{1,11} \d{1,2},? (\d{4})'
-      # name_clue = r''
-      # for name in clue.split():
-      #   name_clue += name + '[\w <>/]{1,20}'
-      # name_clue += '\([born] \w{1,11} \d{1,2},? (\d{4})'
-      # print name_clue
+
+    # Deals with cases like:
+    #   '<PERSON>Katherine Eunice Shriver Schwarzenegger</PERSON> 
+    #    \(born December 13, (1989)'
+    name_clue = r'<PERSON>'
+    for name in clue.split():
+      name_clue += name + '[\w\- ]*'
+    name_clue += '</PERSON> \(born December 13, (1989)'
+    print name_clue
 
     patterns = [
+      name_clue,
+
       # (born Month DD, YYYY DD Month YYYY)
       r'\((?:born )?\b\w{1,11}\b \d{1,2}, (\d{4}) \b\w{1,11}\b \d{1,2}, (\d{4})\)',
       
@@ -107,6 +112,8 @@ class Answerer:
     
     patterns = [
       r'was born in <LOCATION>([\w ]+</LOCATION>, <LOCATION>[\w ]+)</LOCATION>',
+      # r'Born as <PERSON>Edgar Poe</PERSON> in <LOCATION>Boston</LOCATION>, <LOCATION>Massachusetts</LOCATION>'
+      # r'<PERSON>Benjamin Franklin</PERSON> was born on Milk Street, in <LOCATION>(Boston</LOCATION>, <LOCATION>Massachusetts)</LOCATION>, on January 17, 1706',
       r'\(<LOCATION>([\w ]+(?:</LOCATION>, <LOCATION>[\w ]+)?)</LOCATION>, (?:born )?\d{1,2} \b\w{1,11}\b (\d{4})'
     ]
     match = self.searchForPatterns(patterns, [1]*len(patterns), relevant_docs)
