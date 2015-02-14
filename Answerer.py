@@ -108,11 +108,11 @@ class Answerer:
   def answerBornIn(self, clue, relevant_docs):
     
     patterns = [
-      r'was born in <LOCATION></LOCATION>',
+      r'was born in <LOCATION>([\w ]+</LOCATION>, <LOCATION>[\w ]+)</LOCATION>',
     ]
     match = self.searchForPatterns(patterns, [1]*len(patterns), relevant_docs)
-    
-    if match == None:   
+    match = str(match).replace('<LOCATION>', '').replace('</LOCATION>', '')
+    if match == None or match == 'None':
       return 'No answer.'
     else:               
       # print 'What is %s?' % (match)
